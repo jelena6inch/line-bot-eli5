@@ -1,0 +1,424 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>園地小秘書架構解說</title>
+<meta name="description" content="給工程師看的架構解說：用 Google Sheets + Apps Script 做一個 LINE 群組值日生提醒機器人，包含資料流、計費模型、冪等設計與已知限制。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f6f4ee; --paper:#fffdf8; --ink:#1f2a24; --muted:#5d6b63; --line:#e3ddd0;
+  --green:#2f6b4f; --green-soft:#dcebe1; --sun:#f2b544; --sun-soft:#fdf0d4;
+  --clay:#c4623f; --clay-soft:#f8e1d6; --sky:#3f76b6; --sky-soft:#dde9f6;
+  --line-green:#06c755;
+  --shadow:0 1px 2px rgba(31,42,36,.06),0 8px 24px rgba(31,42,36,.06);
+  --mono:'JetBrains Mono',ui-monospace,Consolas,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#151b18; --paper:#1d2521; --ink:#e9efe9; --muted:#a3b2a9; --line:#2f3a34;
+  --green:#8fd0a8; --green-soft:#24392d; --sun:#f2c46a; --sun-soft:#3a3120;
+  --clay:#ee9a78; --clay-soft:#3d2a22; --sky:#8db6e8; --sky-soft:#1f2e3f; --shadow:none;
+}}
+:root[data-theme="dark"]{
+  --bg:#151b18; --paper:#1d2521; --ink:#e9efe9; --muted:#a3b2a9; --line:#2f3a34;
+  --green:#8fd0a8; --green-soft:#24392d; --sun:#f2c46a; --sun-soft:#3a3120;
+  --clay:#ee9a78; --clay-soft:#3d2a22; --sky:#8db6e8; --sky-soft:#1f2e3f; --shadow:none;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'Noto Sans TC',system-ui,sans-serif;line-height:1.75;font-size:17px;-webkit-font-smoothing:antialiased}
+a{color:var(--green)}
+.wrap{max-width:980px;margin:0 auto;padding:0 16px}
+header.hero{padding:72px 0 40px}
+.kicker{display:inline-block;font-size:13px;font-weight:700;letter-spacing:.08em;color:var(--green);background:var(--green-soft);padding:4px 12px;border-radius:999px}
+h1{font-size:clamp(30px,6vw,52px);line-height:1.2;margin:18px 0 14px;font-weight:900}
+h1 em{font-style:normal;color:var(--green)}
+.lead{font-size:clamp(17px,2.4vw,20px);color:var(--muted);max-width:42em}
+nav.toc{display:flex;flex-wrap:wrap;gap:8px;margin-top:28px}
+nav.toc a{font-size:14px;text-decoration:none;color:var(--ink);border:1px solid var(--line);background:var(--paper);padding:6px 12px;border-radius:999px}
+nav.toc a:hover{border-color:var(--green);color:var(--green)}
+section{padding:56px 0;border-top:1px dashed var(--line)}
+.num{font-family:var(--mono);font-size:14px;color:var(--clay);font-weight:700}
+h2{font-size:clamp(23px,3.6vw,32px);line-height:1.3;margin:6px 0 10px;font-weight:900}
+h3{font-size:19px;margin:28px 0 8px}
+p{margin:10px 0}
+.muted{color:var(--muted)}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:20px 22px;box-shadow:var(--shadow)}
+.card h3{margin-top:0}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+@media (max-width:760px){.grid2,.grid3{grid-template-columns:1fr}}
+.say{border-left:5px solid var(--sun);background:var(--sun-soft);padding:14px 18px;border-radius:0 14px 14px 0;margin:18px 0}
+code{font-family:var(--mono);font-size:.88em;background:var(--green-soft);color:var(--green);padding:1px 6px;border-radius:6px;word-break:break-word}
+pre{font-family:var(--mono);font-size:13.5px;line-height:1.6;background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:16px 18px;overflow-x:auto;margin:14px 0}
+pre code{background:none;padding:0;color:var(--ink);font-size:inherit}
+.c{color:var(--muted)}
+figure{margin:22px 0}
+figure svg{width:100%;height:auto;display:block}
+figcaption{font-size:14px;color:var(--muted);text-align:center;margin-top:8px}
+table{width:100%;border-collapse:collapse;font-size:15px}
+th,td{padding:10px 12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{font-size:13px;color:var(--muted);font-weight:700}
+.tablewrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.tag{display:inline-block;font-size:12.5px;font-weight:700;padding:1px 9px;border-radius:6px;white-space:nowrap}
+.t-g{background:var(--green-soft);color:var(--green)}
+.t-s{background:var(--sky-soft);color:var(--sky)}
+.t-c{background:var(--clay-soft);color:var(--clay)}
+.warn{border:2px solid var(--clay);background:var(--clay-soft);border-radius:16px;padding:16px 20px;margin:14px 0}
+.warn h4{margin:0 0 6px;color:var(--clay);font-size:17px}
+.warn p{margin:4px 0;font-size:15.5px}
+ol.steps{counter-reset:s;list-style:none;padding:0;margin:14px 0}
+ol.steps li{counter-increment:s;position:relative;padding:8px 0 8px 46px}
+ol.steps li::before{content:counter(s);position:absolute;left:0;top:6px;width:32px;height:32px;border-radius:50%;background:var(--green);color:var(--paper);font-weight:900;display:grid;place-items:center;font-size:15px}
+/* cost calculator */
+.calc{display:grid;grid-template-columns:1fr 1fr;gap:20px;align-items:start}
+@media (max-width:760px){.calc{grid-template-columns:1fr}}
+.calc label{display:block;font-size:14px;font-weight:700;margin:12px 0 4px}
+.calc input[type=range]{width:100%;accent-color:var(--green)}
+.days{display:flex;gap:6px;flex-wrap:wrap}
+.days button{font:inherit;font-size:14px;border:1px solid var(--line);background:var(--paper);color:var(--ink);border-radius:10px;padding:6px 10px;cursor:pointer;min-width:58px}
+.days button[data-m="g"]{background:var(--sky-soft);border-color:var(--sky);color:var(--sky)}
+.days button[data-m="p"]{background:var(--green-soft);border-color:var(--green);color:var(--green)}
+.big{font-family:var(--mono);font-size:44px;font-weight:700;line-height:1.1}
+.bar{height:14px;border-radius:999px;background:var(--line);overflow:hidden;margin:10px 0 4px}
+.bar>i{display:block;height:100%;background:var(--green);transition:width .25s}
+.bar.over>i{background:var(--clay)}
+footer{padding:40px 0 60px;color:var(--muted);font-size:14px;border-top:1px dashed var(--line)}
+.themebtn{position:fixed;right:16px;top:16px;border:1px solid var(--line);background:var(--paper);color:var(--ink);border-radius:999px;width:40px;height:40px;cursor:pointer;font-size:18px;z-index:5}
+svg text{font-family:'Noto Sans TC',sans-serif;fill:var(--ink)}
+svg .mono{font-family:'JetBrains Mono',monospace;font-weight:700}
+svg .mut{fill:var(--muted)}
+svg .box{fill:var(--paper);stroke:var(--line);stroke-width:2}
+svg .bg{fill:var(--green-soft);stroke:var(--green);stroke-width:2}
+svg .bs{fill:var(--sky-soft);stroke:var(--sky);stroke-width:2}
+svg .bc{fill:var(--clay-soft);stroke:var(--clay);stroke-width:2}
+svg .ar{stroke:var(--muted);stroke-width:2.2;fill:none;marker-end:url(#ah)}
+svg .ar.g{stroke:var(--green);marker-end:url(#ahg)}
+svg .ar.s{stroke:var(--sky);marker-end:url(#ahs)}
+</style>
+</head>
+<body>
+<button class="themebtn" id="themebtn" aria-label="切換深淺色">◐</button>
+
+<header class="hero wrap">
+  <span class="kicker">架構解說 · 給工程師</span>
+  <h1>用一張<em>試算表</em>當資料庫，<br>做一個 LINE 值日生提醒機器人</h1>
+  <p class="lead">「園地小秘書」是大綠地辦公室 15 人 LINE 群組裡的提醒機器人。它在固定時間 @ 本週值日生，或私訊本人。整套沒有自己的伺服器、沒有資料庫：Google Sheets 是資料層兼後台，Apps Script 同時跑 webhook 和排程。這頁說明它怎麼運作、為什麼這樣設計，以及它取捨掉了什麼。</p>
+  <nav class="toc" aria-label="目錄">
+    <a href="#s1">① 需求與限制</a>
+    <a href="#s2">② 架構總覽</a>
+    <a href="#s3">③ 資料模型</a>
+    <a href="#s4">④ 排程路徑</a>
+    <a href="#s5">⑤ Webhook 路徑</a>
+    <a href="#s6">⑥ 計費模型</a>
+    <a href="#s7">⑦ 冪等與並行</a>
+    <a href="#s8">⑧ 安全取捨</a>
+    <a href="#s9">⑨ 測試與部署</a>
+  </nav>
+</header>
+
+<main class="wrap">
+
+<!-- 1 -->
+<section id="s1">
+  <div class="num">01</div>
+  <h2>需求很小，限制才是重點</h2>
+  <p>功能本身一句話講得完：<b>每週輪一個值日生，每天 16:00 提醒他倒垃圾、關窗戶。</b>難的是下面這幾個限制，它們決定了後面每一個設計選擇。</p>
+  <div class="grid3">
+    <div class="card">
+      <h3>💸 零預算</h3>
+      <p class="muted">用免費的 LINE 官方帳號（每月 200 則推播）和 Google Workspace 內建的 Apps Script。不開 VM、不用 Cloud Run、不買資料庫。</p>
+    </div>
+    <div class="card">
+      <h3>🧑‍💼 非工程師維護</h3>
+      <p class="muted">日常操作的人是營運主管，不是工程師。換值日生、加國定假日、查發送失敗，都要能在試算表裡完成，不用碰程式。</p>
+    </div>
+    <div class="card">
+      <h3>📏 額度很緊</h3>
+      <p class="muted">LINE 對群組推播<b>按群組人數計費</b>：在 15 人群組發一則算 15 則。每天在群組 @，一個月就超過 200 則。</p>
+    </div>
+  </div>
+  <div class="say">所以核心設計是<b>混合投遞</b>：週一在群組 @（讓大家都知道這週輪誰），週二到週五改私訊本人（一次只算 1 則）。沒加機器人好友的人沒辦法私訊，就自動退回群組 @。</div>
+</section>
+
+<!-- 2 -->
+<section id="s2">
+  <div class="num">02</div>
+  <h2>架構總覽：一個 Apps Script，兩個進入點</h2>
+  <p>同一支 <code>Code.gs</code> 綁在試算表上，有兩條完全獨立的執行路徑：</p>
+  <figure>
+    <svg viewBox="0 0 900 400" role="img" aria-label="架構圖：LINE 平台透過 webhook 呼叫 Apps Script 的 doPost；每 5 分鐘的時間觸發器呼叫 runReminders；兩者都讀寫 Google Sheets，並呼叫 LINE Messaging API 送出訊息">
+      <defs>
+        <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--muted)"/></marker>
+        <marker id="ahg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--green)"/></marker>
+        <marker id="ahs" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--sky)"/></marker>
+      </defs>
+      <!-- LINE side -->
+      <rect class="box" x="20" y="30" width="200" height="340" rx="18"/>
+      <text x="120" y="62" text-anchor="middle" font-weight="900" font-size="18">LINE 平台</text>
+      <rect class="bs" x="40" y="86" width="160" height="70" rx="12"/>
+      <text x="120" y="116" text-anchor="middle" font-weight="700" font-size="15">群組 / 使用者</text>
+      <text x="120" y="139" text-anchor="middle" font-size="12.5" class="mut">打「報到」、加好友</text>
+      <rect class="bs" x="40" y="250" width="160" height="90" rx="12"/>
+      <text x="120" y="282" text-anchor="middle" font-weight="700" font-size="15">Messaging API</text>
+      <text x="120" y="305" text-anchor="middle" font-size="12" class="mono mut">/message/push</text>
+      <text x="120" y="324" text-anchor="middle" font-size="12" class="mono mut">/message/reply</text>
+      <!-- Apps Script -->
+      <rect class="box" x="330" y="30" width="300" height="340" rx="18"/>
+      <text x="480" y="62" text-anchor="middle" font-weight="900" font-size="18">Apps Script（Code.gs）</text>
+      <rect class="bg" x="350" y="86" width="260" height="76" rx="12"/>
+      <text x="480" y="116" text-anchor="middle" font-size="15" class="mono">doPost(e)</text>
+      <text x="480" y="140" text-anchor="middle" font-size="12.5" class="mut">Web App · webhook 進入點</text>
+      <rect class="bg" x="350" y="190" width="260" height="76" rx="12"/>
+      <text x="480" y="220" text-anchor="middle" font-size="15" class="mono">runReminders()</text>
+      <text x="480" y="244" text-anchor="middle" font-size="12.5" class="mut">時間觸發器 · 每 5 分鐘</text>
+      <rect class="box" x="350" y="292" width="260" height="58" rx="12"/>
+      <text x="480" y="318" text-anchor="middle" font-size="13" class="mut">ScriptProperties：Channel 憑證</text>
+      <text x="480" y="337" text-anchor="middle" font-size="13" class="mut">CacheService：token、事件去重</text>
+      <!-- Sheets -->
+      <rect class="bc" x="720" y="86" width="160" height="264" rx="18"/>
+      <text x="800" y="118" text-anchor="middle" font-weight="900" font-size="17">Google Sheets</text>
+      <text x="800" y="152" text-anchor="middle" font-size="14">成員名單</text>
+      <text x="800" y="180" text-anchor="middle" font-size="14">提醒排程</text>
+      <text x="800" y="208" text-anchor="middle" font-size="14">停發日期</text>
+      <text x="800" y="236" text-anchor="middle" font-size="14">設定</text>
+      <text x="800" y="264" text-anchor="middle" font-size="14">發送紀錄</text>
+      <text x="800" y="318" text-anchor="middle" font-size="12" class="mut">資料層 ＋ 管理後台</text>
+      <!-- arrows -->
+      <path class="ar s" d="M200 116 H346"/>
+      <text x="273" y="106" text-anchor="middle" font-size="12" class="mut">webhook</text>
+      <path class="ar g" d="M612 124 H716"/>
+      <path class="ar g" d="M612 228 H716"/>
+      <text x="664" y="114" text-anchor="middle" font-size="12" class="mut">寫</text>
+      <text x="664" y="218" text-anchor="middle" font-size="12" class="mut">讀＋寫</text>
+      <path class="ar" d="M350 150 C 280 170, 260 240, 204 280"/>
+      <path class="ar" d="M350 240 C 290 250, 260 280, 204 300"/>
+      <text x="262" y="214" text-anchor="middle" font-size="12" class="mut">reply</text>
+      <text x="290" y="290" text-anchor="middle" font-size="12" class="mut">push</text>
+    </svg>
+    <figcaption>兩條路徑共用同一份試算表和同一組 LINE 憑證，但彼此不會互相呼叫。</figcaption>
+  </figure>
+  <div class="grid2">
+    <div class="card">
+      <h3><span class="tag t-s">被動</span> Webhook 路徑</h3>
+      <p class="muted">LINE 把事件 POST 到部署好的 Web App 網址。負責「認人」：機器人被拉進哪個群組、誰報到了、誰加了好友。結果寫進「成員名單」和「設定」。</p>
+    </div>
+    <div class="card">
+      <h3><span class="tag t-g">主動</span> 排程路徑</h3>
+      <p class="muted">Time-driven trigger 每 5 分鐘跑一次，讀「提醒排程」，判斷現在該不該發、用群組還是私訊，送出後寫「發送紀錄」。</p>
+    </div>
+  </div>
+  <h3>為什麼用 Sheets ＋ Apps Script，而不是正規的後端</h3>
+  <div class="tablewrap"><table>
+    <tr><th>考量</th><th>Sheets ＋ Apps Script</th><th>一般後端（Cloud Run ＋ DB）</th></tr>
+    <tr><td>成本</td><td>$0，公司 Workspace 已包含</td><td>小，但不是零；要有人管帳單</td></tr>
+    <tr><td>後台 UI</td><td>試算表本身就是 CRUD 介面，還有權限、版本紀錄</td><td>要另外寫管理介面</td></tr>
+    <tr><td>維運</td><td>沒有伺服器、沒有 OS 要更新</td><td>要部署、監控、更新相依套件</td></tr>
+    <tr><td>代價</td><td>拿不到 HTTP header（無法驗簽）、觸發器最細 1 分鐘、執行時間上限 6 分鐘</td><td>完整控制</td></tr>
+  </table></div>
+  <p class="muted">對 15 人、一天一則的量，代價都在可接受範圍內；唯一真正要處理的是「無法驗簽」，見 <a href="#s8">⑧</a>。</p>
+</section>
+
+<!-- 3 -->
+<section id="s3">
+  <div class="num">03</div>
+  <h2>資料模型：五個分頁</h2>
+  <p>每個分頁第一列是表頭，由選單「1. 建立表格」（<code>setupSheets()</code>）建立。程式用欄位位置讀寫，所以表頭順序就是 schema。</p>
+  <div class="tablewrap"><table>
+    <tr><th>分頁</th><th>欄位</th><th>誰寫</th><th>用途</th></tr>
+    <tr><td><b>成員名單</b></td><td>稱呼、LINE 名稱、系統編號、好友、在群組、報到時間</td><td><span class="tag t-s">webhook</span> ＋ 人工補「稱呼」</td><td>把人看得懂的名字（「小明」）對應到 LINE 的 <code>userId</code></td></tr>
+    <tr><td><b>提醒排程</b></td><td>啟用、開始日、結束日、要 @ 誰、提醒內容、時間、群組 @ 的日子、私訊的日子、備註</td><td>人工</td><td>一週一列。日子欄接受「一」「二~五」「一、三、五」「每天」</td></tr>
+    <tr><td><b>停發日期</b></td><td>日期、原因</td><td>人工</td><td>國定假日整天不發</td></tr>
+    <tr><td><b>設定</b></td><td>項目、值（群組 ID、群組名稱）</td><td><span class="tag t-s">webhook</span></td><td>機器人被拉進群組時自動記下 <code>groupId</code></td></tr>
+    <tr><td><b>發送紀錄</b></td><td>時間、方式、對象、內容、結果、說明、Request ID、識別碼</td><td><span class="tag t-g">排程</span></td><td>稽核紀錄，同時也是<b>去重依據</b>（見 <a href="#s7">⑦</a>）</td></tr>
+  </table></div>
+  <div class="say">設計原則：<b>機密不進試算表。</b>Channel ID / secret 放在 Apps Script 的 Script Properties。試算表會分享給其他同事編輯，Script Properties 只有專案擁有者看得到。</div>
+</section>
+
+<!-- 4 -->
+<section id="s4">
+  <div class="num">04</div>
+  <h2>排程路徑：每 5 分鐘的一次掃描</h2>
+  <p><code>runReminders()</code> 是一個無狀態的 reconcile loop：每次都從試算表重新讀全部資料，算出「現在應該已經發但還沒發的」，發掉它，記下來。</p>
+  <ol class="steps">
+    <li><b>拿鎖。</b><code>LockService.getScriptLock().tryLock(30s)</code>，拿不到就直接 return。避免前一輪還沒跑完、下一輪又開始，結果重複發。</li>
+    <li><b>今天停發嗎？</b>今天在「停發日期」裡就整輪結束。</li>
+    <li><b>讀今天已發過的識別碼。</b>從「發送紀錄」挑出今天的 key，組成 set。</li>
+    <li><b>逐列判斷。</b>對每個有勾「啟用」的排程列：
+      <pre><code>key = today | 要@誰 | 內容 | 時間        <span class="c">// 今天這一列的唯一識別</span>
+if (sentToday[key]) skip
+if (!isDue(row, today, nowMinutes)) skip  <span class="c">// 在日期區間內、且 now ∈ [時間, 時間+120 分)</span>
+mode = decideMode(row, weekday, everyoneIsFriend)
+<span class="c">// 'group' | 'private' | 'group-fallback' | null</span></code></pre></li>
+    <li><b>送出並記錄。</b>群組用 <code>textV2</code> 訊息帶 mention；私訊對每個人各 push 一次。結果（含 LINE 回傳的 <code>x-line-request-id</code>）寫進「發送紀錄」。</li>
+  </ol>
+  <h3>decideMode 的決策表</h3>
+  <div class="tablewrap"><table>
+    <tr><th>今天落在</th><th>所有對象都是好友？</th><th>結果</th><th>則數（15 人群組）</th></tr>
+    <tr><td>群組 @ 的日子</td><td>不看</td><td><span class="tag t-s">group</span> 在群組 @</td><td>15</td></tr>
+    <tr><td>私訊的日子</td><td>是</td><td><span class="tag t-g">private</span> 私訊每個對象</td><td>對象人數（通常 1）</td></tr>
+    <tr><td>私訊的日子</td><td>否（或對象是「全部人」）</td><td><span class="tag t-c">group-fallback</span> 改在群組 @，紀錄寫明原因</td><td>15</td></tr>
+    <tr><td>都不是</td><td>—</td><td>不發</td><td>0</td></tr>
+  </table></div>
+  <h3>為什麼是「時間到了之後的 2 小時內」而不是「剛好等於」</h3>
+  <p>Apps Script 的 time-driven trigger 不保證準時，5 分鐘的觸發器實際間隔會飄。用區間判斷 + 已發紀錄去重，可以容忍觸發器延遲或漏跑一輪。超過 120 分鐘就放棄，避免下午 4 點的「下班前記得倒垃圾」在晚上 8 點才送到。</p>
+  <h3>群組 @ 的訊息格式</h3>
+  <p>LINE 的 <code>textV2</code> 用 placeholder 做 mention，使用者內容裡的大括號要跳脫成 <code>{{</code> <code>}}</code>，否則會被當成 placeholder 而送出失敗。一則最多 @ 20 人。</p>
+  <pre><code>{
+  "type": "textV2",
+  "text": "{m0}\n本週值日生，每天下班前記得：倒垃圾、關窗戶",
+  "substitution": {
+    "m0": { "type": "mention", "mentionee": { "type": "user", "userId": "U…" } }
+  }
+}</code></pre>
+</section>
+
+<!-- 5 -->
+<section id="s5">
+  <div class="num">05</div>
+  <h2>Webhook 路徑：讓機器人認得每個人</h2>
+  <p>LINE 的 <code>userId</code> 是每個官方帳號各自不同的不透明字串，沒辦法事先知道。所以必須讓使用者跟機器人「互動一次」，機器人才拿得到他的 ID。這就是「報到」的用途。</p>
+  <div class="tablewrap"><table>
+    <tr><th>事件</th><th>觸發時機</th><th>程式做什麼</th></tr>
+    <tr><td><code>join</code></td><td>機器人被拉進群組</td><td>反查群組資訊 → 記下群組 ID、群組名稱 → 回覆使用說明</td></tr>
+    <tr><td><code>message</code>「報到」</td><td>有人在群組打「報到」</td><td>反查群組成員資料 → 檢查是否為好友 → 寫入／更新成員名單 → 回覆「✅ 報到完成」</td></tr>
+    <tr><td><code>follow</code></td><td>有人加機器人好友</td><td>反查個人資料 → 成員名單「好友」改 ✅</td></tr>
+    <tr><td><code>unfollow</code></td><td>有人封鎖／刪除好友</td><td>確認真的不是好友 → 改 ❌（之後私訊日會自動退回群組 @）</td></tr>
+    <tr><td><code>memberJoined</code></td><td>新同事進群組</td><td>回覆提醒他報到</td></tr>
+    <tr><td><code>memberLeft</code> / <code>leave</code></td><td>有人離開／機器人被踢</td><td>反查確認後更新狀態</td></tr>
+  </table></div>
+  <p>人工只需要在「成員名單」補一欄<b>稱呼</b>，排程表就能用「小明」而不是 <code>Uxxxxxxxx…</code> 來指定對象。</p>
+</section>
+
+<!-- 6 -->
+<section id="s6">
+  <div class="num">06</div>
+  <h2>計費模型：為什麼不每天在群組 @</h2>
+  <p>LINE 官方帳號免費方案每月 200 則。push 到群組時，<b>群組裡有幾個人就算幾則</b>；push 給個人算 1 則；reply（回覆使用者訊息）免費。下面可以自己調調看：點一下切換「不發 → 群組 → 私訊」。</p>
+  <div class="card calc">
+    <div>
+      <label for="ppl">群組人數：<span id="pplv">15</span> 人</label>
+      <input id="ppl" type="range" min="3" max="40" value="15">
+      <label>每天的發送方式</label>
+      <div class="days" id="days"></div>
+      <p class="muted" style="font-size:13px;margin-top:10px"><span class="tag t-s">群組</span> 算 N 則　<span class="tag t-g">私訊</span> 算 1 則　一個月以 4.33 週計</p>
+    </div>
+    <div>
+      <div class="muted" style="font-size:14px;font-weight:700">每月估計用量</div>
+      <div class="big" id="total">0</div>
+      <div class="bar" id="bar"><i id="fill"></i></div>
+      <div class="muted" style="font-size:14px" id="verdict"></div>
+    </div>
+  </div>
+  <p class="muted">目前採用的「週一群組、週二到週五私訊」約 90 則／月，留了一半以上的空間給 fallback（有人沒加好友時改群組 @）和偶爾的測試訊息。</p>
+</section>
+
+<!-- 7 -->
+<section id="s7">
+  <div class="num">07</div>
+  <h2>冪等與並行：怎麼確保不會重複發</h2>
+  <p>「提醒發了兩次」是這類系統最常見、也最惹人厭的 bug。這裡疊了四層防護，各自處理不同的失敗情境：</p>
+  <div class="tablewrap"><table>
+    <tr><th>層</th><th>機制</th><th>防的是</th></tr>
+    <tr><td>1</td><td><b>Script Lock</b>：<code>runReminders</code> 和 <code>upsertMember</code> 都先拿鎖</td><td>觸發器重疊執行；同時有多人報到，寫入成員名單時互相覆蓋</td></tr>
+    <tr><td>2</td><td><b>發送紀錄當 outbox</b>：<code>today|對象|內容|時間</code> 寫入「識別碼」欄，每輪先讀出來比對</td><td>同一列在 2 小時的區間內被每 5 分鐘重送</td></tr>
+    <tr><td>3</td><td><b><code>X-Line-Retry-Key</code></b>：每次 push 帶一個 UUID，遇到 5xx 或網路錯誤時用同一把 key 重試；LINE 回 409 代表「這把 key 已經處理過」，視為成功</td><td>請求其實送到了，但回應在路上掉了，重試導致重複</td></tr>
+    <tr><td>4</td><td><b>webhook 事件去重</b>：用 <code>webhookEventId</code> 放進 CacheService 6 小時</td><td>LINE 重送同一個 webhook 事件</td></tr>
+  </table></div>
+  <div class="say">一個刻意的細節：時間格式錯誤、找不到成員這類<b>設定錯誤</b>也會寫一筆 key 進紀錄。否則同一個錯誤每 5 分鐘會寫一次 log，兩小時就洗出 24 列。</div>
+</section>
+
+<!-- 8 -->
+<section id="s8">
+  <div class="num">08</div>
+  <h2>安全取捨：無法驗簽，就改成反查</h2>
+  <div class="warn">
+    <h4>⚠️ 限制：Apps Script 的 <code>doPost(e)</code> 拿不到 HTTP request header</h4>
+    <p>LINE 會在 <code>x-line-signature</code> header 放 HMAC-SHA256 簽章，正規做法是用 channel secret 驗證 body。但 Apps Script Web App 的事件物件不提供 header，所以這一步做不到。Web App 又必須設成「所有人可存取」，LINE 才打得進來。</p>
+  </div>
+  <p>也就是說，任何知道網址的人都能 POST 偽造事件進來。補強方式是：<b>webhook 不信任事件內容，每一件要寫入狀態的事都先用自己的 token 向 LINE API 反查。</b></p>
+  <div class="tablewrap"><table>
+    <tr><th>偽造的事件</th><th>反查</th><th>結果</th></tr>
+    <tr><td>假 <code>join</code>，想把群組 ID 換成別的</td><td><code>GET /v2/bot/group/{id}/summary</code></td><td>機器人不在那個群組 → 失敗，不寫入</td></tr>
+    <tr><td>假「報到」，想塞假成員</td><td><code>GET /v2/bot/group/{id}/member/{userId}</code>，且群組 ID 要等於已記住的那個</td><td>不是群組成員 → 失敗</td></tr>
+    <tr><td>假 <code>follow</code> / <code>unfollow</code></td><td><code>GET /v2/bot/profile/{userId}</code></td><td>以 LINE 回傳的真實好友狀態為準</td></tr>
+  </table></div>
+  <p class="muted">剩下的風險：攻擊者可以讓機器人回覆訊息（reply token 是假的，所以實際上會失敗），或消耗 Apps Script 的執行配額。對一個內部工具來說可以接受。</p>
+  <h3>憑證：用 stateless channel access token</h3>
+  <p>不存長期 token。每次需要時用 Channel ID + secret 向 <code>/oauth2/v3/token</code>（client credentials）換一個 15 分鐘有效的 token，在 CacheService 快取 10 分鐘。好處是沒有長期有效的 token 可以外洩，也不需要排程去輪替 token。</p>
+</section>
+
+<!-- 9 -->
+<section id="s9">
+  <div class="num">09</div>
+  <h2>測試與部署</h2>
+  <div class="grid2">
+    <div class="card">
+      <h3>測試</h3>
+      <p class="muted">純邏輯（<code>parseWeekdays</code>、<code>parseTime</code>、<code>decideMode</code>、<code>isDue</code>、<code>buildGroupMessage</code>）寫成不依賴 Google API 的函式，用 Node 內建的 <code>node:test</code> 測。流程測試把 <code>SpreadsheetApp</code>、<code>UrlFetchApp</code> 等全域物件 mock 掉，在 Node 的 <code>vm</code> 裡跑整支 <code>Code.gs</code>，驗證「私訊日有人沒加好友 → 改群組 @」「同一天不重複發」這類情境。共 21 項。</p>
+    </div>
+    <div class="card">
+      <h3>部署</h3>
+      <p class="muted">貼上 <code>Code.gs</code> → 部署成 Web App（執行身分：擁有者；存取：所有人）→ 網址填到 LINE Developers 的 Webhook URL。之後改程式要用「管理部署作業 → 編輯 → 新版本」，<b>網址才不會變</b>，LINE 那邊不用重設。</p>
+    </div>
+  </div>
+  <h3>已知限制</h3>
+  <ul>
+    <li><b>準確度 ±5 分鐘：</b>受限於觸發器間隔。對「下班前提醒」來說夠用。</li>
+    <li><b>只用電腦版 LINE 的人：</b>如果從沒在手機上同意過資料分享，webhook 事件裡沒有 <code>userId</code>，機器人會請他改用手機報到。</li>
+    <li><b>Sheets 當資料庫：</b>「發送紀錄」會一直長，每輪都全表掃描。以一天幾列的量，幾年內都不是問題；真的變慢再改成只讀最後 N 列。</li>
+    <li><b>單一群組：</b>設定只記一個群組 ID。要支援多群組，排程表要多一欄「發到哪個群組」。</li>
+  </ul>
+</section>
+
+</main>
+
+<footer class="wrap">
+  <p>園地小秘書 · 大綠地家具內部工具 · 2026-10。這頁只說明架構，不含任何憑證、網址或成員資料。</p>
+</footer>
+
+<script>
+(function(){
+  var root=document.documentElement, btn=document.getElementById('themebtn');
+  try{var t=localStorage.getItem('theme'); if(t) root.setAttribute('data-theme',t);}catch(e){}
+  btn.addEventListener('click',function(){
+    var cur=root.getAttribute('data-theme') || (matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');
+    var next=cur==='dark'?'light':'dark'; root.setAttribute('data-theme',next);
+    try{localStorage.setItem('theme',next);}catch(e){}
+  });
+
+  var names=['一','二','三','四','五','六','日'];
+  var modes=['g','p','p','p','p','','']; // 現行方案：週一群組，週二到週五私訊
+  var label={'':'不發','g':'群組','p':'私訊'};
+  var next={'':'g','g':'p','p':''};
+  var daysEl=document.getElementById('days'), ppl=document.getElementById('ppl');
+  names.forEach(function(n,i){
+    var b=document.createElement('button'); b.type='button';
+    b.addEventListener('click',function(){modes[i]=next[modes[i]];render();});
+    daysEl.appendChild(b);
+  });
+  function render(){
+    var n=+ppl.value, perWeek=0;
+    document.getElementById('pplv').textContent=n;
+    Array.prototype.forEach.call(daysEl.children,function(b,i){
+      b.dataset.m=modes[i]; b.textContent='週'+names[i]+' '+label[modes[i]];
+      b.setAttribute('aria-label','週'+names[i]+'：'+label[modes[i]]+'，點一下切換');
+      perWeek+=modes[i]==='g'?n:modes[i]==='p'?1:0;
+    });
+    var total=Math.round(perWeek*4.33);
+    document.getElementById('total').textContent=total+' / 200';
+    document.getElementById('fill').style.width=Math.min(100,total/2)+'%';
+    document.getElementById('bar').classList.toggle('over',total>200);
+    document.getElementById('verdict').textContent= total>200
+      ? '超過免費額度 '+(total-200)+' 則，月中之後的提醒會發不出去。'
+      : '在免費額度內，還剩約 '+(200-total)+' 則。';
+  }
+  ppl.addEventListener('input',render);
+  render();
+})();
+</script>
+</body>
+</html>
