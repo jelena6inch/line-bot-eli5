@@ -235,7 +235,7 @@ svg .ar.s{stroke:var(--sky);marker-end:url(#ahs)}
     <tr><td><b>設定</b></td><td>項目、值（群組 ID、群組名稱）</td><td><span class="tag t-s">webhook</span></td><td>機器人被拉進群組時自動記下 <code>groupId</code></td></tr>
     <tr><td><b>發送紀錄</b></td><td>時間、方式、對象、內容、結果、說明、Request ID、識別碼</td><td><span class="tag t-g">排程</span></td><td>稽核紀錄，同時也是<b>去重依據</b>（見 <a href="#s7">⑦</a>）</td></tr>
   </table></div>
-  <div class="say">設計原則：<b>機密不進試算表。</b>Channel ID / secret 放在 Apps Script 的 Script Properties。試算表會分享給其他同事編輯，Script Properties 只有專案擁有者看得到。</div>
+  <div class="say">設計原則：<b>機密不進試算表。</b>Channel ID / secret 放在 Apps Script 的 Script Properties。只有檢視權限的同事看不到它們；但綁定在試算表上的 Apps Script 會繼承試算表的權限，有<b>編輯權</b>的人可以打開專案設定看到 Script Properties。所以試算表的編輯權只給必要的人，一般同事給檢視權就好。</div>
 </section>
 
 <!-- 4 -->
