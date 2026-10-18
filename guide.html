@@ -1,0 +1,226 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>園地小秘書說明</title>
+<meta name="description" content="給大綠地同事和主管的說明：園地小秘書是什麼、你會收到什麼、你要做哪兩件事，以及費用。">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f6f4ee; --paper:#fffdf8; --ink:#1f2a24; --muted:#5d6b63; --line:#e3ddd0;
+  --green:#2f6b4f; --green-soft:#dcebe1; --sun:#f2b544; --sun-soft:#fdf0d4;
+  --clay:#c4623f; --clay-soft:#f8e1d6; --sky:#3f76b6; --sky-soft:#dde9f6;
+  --bubble:#e9e6dc; --shadow:0 1px 2px rgba(31,42,36,.06),0 8px 24px rgba(31,42,36,.06);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#151b18; --paper:#1d2521; --ink:#e9efe9; --muted:#a3b2a9; --line:#2f3a34;
+  --green:#8fd0a8; --green-soft:#24392d; --sun:#f2c46a; --sun-soft:#3a3120;
+  --clay:#ee9a78; --clay-soft:#3d2a22; --sky:#8db6e8; --sky-soft:#1f2e3f; --bubble:#2a332e; --shadow:none;
+}}
+:root[data-theme="dark"]{
+  --bg:#151b18; --paper:#1d2521; --ink:#e9efe9; --muted:#a3b2a9; --line:#2f3a34;
+  --green:#8fd0a8; --green-soft:#24392d; --sun:#f2c46a; --sun-soft:#3a3120;
+  --clay:#ee9a78; --clay-soft:#3d2a22; --sky:#8db6e8; --sky-soft:#1f2e3f; --bubble:#2a332e; --shadow:none;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'Noto Sans TC',system-ui,sans-serif;line-height:1.8;font-size:17px;-webkit-font-smoothing:antialiased}
+a{color:var(--green)}
+.wrap{max-width:860px;margin:0 auto;padding:0 16px}
+header.hero{padding:72px 0 36px}
+.kicker{display:inline-block;font-size:13px;font-weight:700;letter-spacing:.08em;color:var(--green);background:var(--green-soft);padding:4px 12px;border-radius:999px}
+h1{font-size:clamp(30px,6vw,48px);line-height:1.25;margin:18px 0 12px;font-weight:900}
+h1 em{font-style:normal;color:var(--green)}
+.lead{font-size:clamp(17px,2.4vw,20px);color:var(--muted)}
+.pick{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:28px}
+.pick a{display:block;text-decoration:none;color:var(--ink);background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:16px 18px;box-shadow:var(--shadow)}
+.pick a:hover{border-color:var(--green)}
+.pick b{display:block;font-size:18px}
+.pick span{font-size:14px;color:var(--muted)}
+@media (max-width:620px){.pick{grid-template-columns:1fr}}
+section{padding:52px 0;border-top:1px dashed var(--line)}
+.for{font-size:13px;font-weight:700;letter-spacing:.06em;color:var(--clay)}
+h2{font-size:clamp(23px,3.6vw,31px);line-height:1.3;margin:6px 0 12px;font-weight:900}
+h3{font-size:19px;margin:26px 0 8px}
+p{margin:10px 0}
+.muted{color:var(--muted)}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:20px 22px;box-shadow:var(--shadow)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+@media (max-width:700px){.grid2{grid-template-columns:1fr}}
+.say{border-left:5px solid var(--sun);background:var(--sun-soft);padding:14px 18px;border-radius:0 14px 14px 0;margin:18px 0}
+/* week strip */
+.week{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin:18px 0}
+.day{border-radius:14px;padding:12px 8px;text-align:center;border:2px solid var(--line);background:var(--paper)}
+.day b{display:block;font-size:20px}
+.day small{font-size:13px;color:var(--muted)}
+.day.g{border-color:var(--sky);background:var(--sky-soft)}
+.day.p{border-color:var(--green);background:var(--green-soft)}
+/* chat mock */
+.chat{background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:16px;box-shadow:var(--shadow)}
+.chat .t{font-size:13px;font-weight:700;color:var(--muted);margin-bottom:10px}
+.msg{display:flex;gap:10px;align-items:flex-start;margin:10px 0}
+.msg .av{flex:none;width:34px;height:34px;border-radius:50%;background:var(--green);color:var(--paper);display:grid;place-items:center;font-size:15px;font-weight:900}
+.msg .av.me{background:var(--sky)}
+.msg .who{font-size:12px;color:var(--muted)}
+.bub{background:var(--bubble);border-radius:4px 16px 16px 16px;padding:8px 13px;font-size:15.5px;line-height:1.6;display:inline-block}
+.bub .at{color:var(--sky);font-weight:700}
+.msg.right{flex-direction:row-reverse;text-align:right}
+.msg.right .bub{background:#06c755;color:#fff;border-radius:16px 4px 16px 16px}
+ol.steps{counter-reset:s;list-style:none;padding:0;margin:14px 0}
+ol.steps li{counter-increment:s;position:relative;padding:8px 0 8px 48px}
+ol.steps li::before{content:counter(s);position:absolute;left:0;top:6px;width:34px;height:34px;border-radius:50%;background:var(--green);color:var(--paper);font-weight:900;display:grid;place-items:center}
+details{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:12px 18px;margin:10px 0}
+summary{cursor:pointer;font-weight:700}
+details p{margin:8px 0 2px;color:var(--muted)}
+table{width:100%;border-collapse:collapse;font-size:15.5px}
+th,td{padding:10px 12px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+th{font-size:13px;color:var(--muted);font-weight:700}
+.tablewrap{overflow-x:auto}
+.stat{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:18px 0}
+@media (max-width:620px){.stat{grid-template-columns:1fr}}
+.stat div{background:var(--paper);border:1px solid var(--line);border-radius:16px;padding:16px 18px}
+.stat b{display:block;font-size:34px;font-weight:900;line-height:1.2;color:var(--green)}
+.stat span{font-size:14px;color:var(--muted)}
+.bar{height:16px;border-radius:999px;background:var(--line);overflow:hidden;margin:8px 0 4px;position:relative}
+.bar i{position:absolute;left:0;top:0;bottom:0;background:var(--green);border-radius:999px}
+.bar i.max{background:var(--sun);opacity:.55}
+.free{display:inline-block;background:var(--green);color:var(--paper);font-weight:900;border-radius:999px;padding:2px 14px;font-size:15px}
+footer{padding:40px 0 60px;color:var(--muted);font-size:14px;border-top:1px dashed var(--line)}
+.themebtn{position:fixed;right:16px;top:16px;border:1px solid var(--line);background:var(--paper);color:var(--ink);border-radius:999px;width:40px;height:40px;cursor:pointer;font-size:18px;z-index:5}
+</style>
+</head>
+<body>
+<button class="themebtn" id="themebtn" aria-label="切換深淺色">◐</button>
+
+<header class="hero wrap">
+  <span class="kicker">大綠地辦公室 · 說明</span>
+  <h1>認識<em>園地小秘書</em> 🌱</h1>
+  <p class="lead">園地小秘書是辦公室 LINE 群組裡的機器人。它的工作只有一件：<b>提醒本週的值日生，下班前記得倒垃圾、關窗戶。</b>不用再靠誰記得去喊人。</p>
+  <div class="pick">
+    <a href="#staff"><b>👋 我是同事</b><span>我會收到什麼？我要做什麼？</span></a>
+    <a href="#boss"><b>📋 我是主管</b><span>為什麼做這個？要花多少錢？</span></a>
+  </div>
+</header>
+
+<main class="wrap">
+
+<!-- 同事 -->
+<section id="staff">
+  <div class="for">給同事</div>
+  <h2>輪到你的那一週，它會這樣提醒你</h2>
+  <p>每週輪一位值日生。輪到你的那週，每天下午 4 點左右會收到提醒：</p>
+  <div class="week">
+    <div class="day g"><b>一</b><small>群組 @ 你</small></div>
+    <div class="day p"><b>二</b><small>私訊你</small></div>
+    <div class="day p"><b>三</b><small>私訊你</small></div>
+    <div class="day p"><b>四</b><small>私訊你</small></div>
+    <div class="day p"><b>五</b><small>私訊你</small></div>
+  </div>
+  <p class="muted">週一在群組裡 @ 你，讓大家都知道這週輪到誰；週二到週五改成私訊你本人，不打擾群組裡的其他人。</p>
+
+  <div class="grid2" style="margin-top:20px">
+    <div class="chat" aria-label="週一在群組收到的提醒範例">
+      <div class="t">週一 · 辦公室群組</div>
+      <div class="msg"><div class="av">🌱</div><div><div class="who">園地小秘書</div>
+        <div class="bub"><span class="at">@你的名字</span><br>本週值日生，每天下班前記得：倒垃圾、關窗戶 🗑️🪟</div></div></div>
+    </div>
+    <div class="chat" aria-label="週二到週五收到的私訊範例">
+      <div class="t">週二～週五 · 私訊</div>
+      <div class="msg"><div class="av">🌱</div><div><div class="who">園地小秘書</div>
+        <div class="bub">⏰ 提醒你：<br>本週值日生，每天下班前記得：倒垃圾、關窗戶 🗑️🪟</div></div></div>
+    </div>
+  </div>
+
+  <h3>你只要做兩件事（各做一次就好）</h3>
+  <ol class="steps">
+    <li><b>在群組裡打「報到」兩個字。</b>小秘書會回你「✅ ○○ 報到完成」，這樣它就認得你了。</li>
+    <li><b>把小秘書加為好友。</b>在群組裡點它的頭像 →「加入好友」。加了好友，它才能私訊你。</li>
+  </ol>
+  <div class="chat" style="max-width:460px" aria-label="報到範例">
+    <div class="t">報到長這樣</div>
+    <div class="msg right"><div class="av me">你</div><div><div class="bub">報到</div></div></div>
+    <div class="msg"><div class="av">🌱</div><div><div class="who">園地小秘書</div><div class="bub">✅ 你的名字 報到完成</div></div></div>
+  </div>
+
+  <h3>常見問題</h3>
+  <details><summary>沒加好友會怎樣？</summary>
+    <p>你還是會收到提醒，只是週二到週五也會改在群組裡 @ 你。所以還是建議加好友，比較不會吵到別人。</p></details>
+  <details><summary>打「報到」它沒反應？</summary>
+    <p>要一字不差地打「報到」，前後不要加其他字（打成「報導」它就不認得）。如果還是沒反應，可能是你只用電腦版 LINE，請改用手機打一次。</p></details>
+  <details><summary>它會讀我們的聊天內容嗎？</summary>
+    <p>不會記錄。它只對「報到」兩個字有反應，其他訊息一律不處理、不儲存。它記下的只有你的 LINE 名稱，還有你有沒有加它好友。</p></details>
+  <details><summary>這週我請假，或想跟別人換班？</summary>
+    <p>跟 Jelena 說一聲就好，她改一下排班，提醒就會改發給代班的人。</p></details>
+  <details><summary>國定假日也會提醒嗎？</summary>
+    <p>不會。放假的日子事先排除了，那天整天不發。</p></details>
+  <details><summary>不小心把小秘書封鎖了？</summary>
+    <p>沒關係，它會自動改成在群組 @ 你。想恢復私訊，解除封鎖就好。</p></details>
+</section>
+
+<!-- 主管 -->
+<section id="boss">
+  <div class="for">給主管</div>
+  <h2>一個不花錢的小工具，把「記得提醒」這件事交給機器</h2>
+  <div class="say">重點：<b>目前完全使用免費方案，每月費用 $0。</b>免費方案用完額度也不會自動扣款。</div>
+
+  <h3>為什麼做這個</h3>
+  <div class="grid2">
+    <div class="card"><b>以前</b><p class="muted">要有人記得在群組喊值日生。忙起來就忘了，結果垃圾沒倒、窗戶沒關。</p></div>
+    <div class="card"><b>現在</b><p class="muted">時間到了自動提醒，週一公開讓大家知道輪到誰，其他天私下提醒本人。不用任何人記，也不用有人當壞人去催。</p></div>
+  </div>
+
+  <h3>費用與免費額度</h3>
+  <p>小秘書用的是另外申請的<b>免費 LINE 官方帳號</b>，跟公司對外的「大綠地家具」官方帳號分開，<b>不會用到行銷那邊的訊息額度</b>。程式跑在公司本來就有的 Google 帳號上，也不用另外付錢。</p>
+  <div class="stat">
+    <div><b>$0</b><span>每月費用</span></div>
+    <div><b>200 則</b><span>每月免費額度（LINE 輕用量方案）</span></div>
+    <div><b>約 80～90 則</b><span>預估每月用量</span></div>
+  </div>
+  <div class="bar" role="img" aria-label="每月預估用量約 80 到 90 則，占免費額度 200 則的四成多"><i class="max" style="width:45%"></i><i style="width:40%"></i></div>
+  <p class="muted" style="font-size:14px">預估用量約占免費額度的四成多，還有一半以上的空間。</p>
+
+  <h3>額度是怎麼算的</h3>
+  <div class="tablewrap"><table>
+    <tr><th>訊息</th><th>怎麼計算</th><th>每月約</th></tr>
+    <tr><td>週一在群組 @ 值日生</td><td>群組有幾個人就算幾則（15 人 × 每月約 4 次）</td><td>60～75 則</td></tr>
+    <tr><td>週二～週五私訊本人</td><td>一則算 1 則（每月約 17 次）</td><td>約 17 則</td></tr>
+    <tr><td>回覆「報到」、歡迎訊息</td><td>有人先說話、機器人回覆的訊息不算額度</td><td>0 則</td></tr>
+  </table></div>
+  <p class="muted">也就是說，大家怎麼報到、打幾次字都不會消耗額度。真正會用到額度的只有排好的提醒。</p>
+
+  <h3>萬一超過免費額度會怎樣</h3>
+  <p><b>不會產生任何費用。</b>免費方案用完當月額度後，只是那個月剩下的提醒發不出去，下個月 1 號自動恢復。目前的用量離上限還很遠，正常使用不會碰到。</p>
+  <p class="muted">唯一要留意的是：不要改成「每天都在群組 @ 人」。在 15 人的群組每天 @ 一次，一個月大約 330 則，就會超過免費額度。</p>
+
+  <h3>其他你可能想知道的</h3>
+  <div class="tablewrap"><table>
+    <tr><th>項目</th><th>說明</th></tr>
+    <tr><td>誰負責管理</td><td>Jelena。排班、假日、換人都在一份 Google 試算表裡調整，不需要工程師。</td></tr>
+    <tr><td>記錄了哪些資料</td><td>同事的 LINE 名稱，以及有沒有加小秘書好友。不記錄聊天內容。</td></tr>
+    <tr><td>有沒有發成功</td><td>每一則提醒都會留下紀錄（成功或失敗、原因），隨時查得到。</td></tr>
+    <tr><td>以後還能做什麼</td><td>同一套可以再加其他固定提醒，例如月底盤點、繳交報表。加之前會先算好額度，確保維持在免費範圍內。</td></tr>
+  </table></div>
+</section>
+
+</main>
+
+<footer class="wrap">
+  <p>園地小秘書 · 大綠地辦公室 · 2026-10。想看技術架構的話：<a href="./">架構解說（給工程師）</a></p>
+</footer>
+
+<script>
+(function(){
+  var root=document.documentElement, btn=document.getElementById('themebtn');
+  try{var t=localStorage.getItem('theme'); if(t) root.setAttribute('data-theme',t);}catch(e){}
+  btn.addEventListener('click',function(){
+    var cur=root.getAttribute('data-theme') || (matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');
+    var next=cur==='dark'?'light':'dark'; root.setAttribute('data-theme',next);
+    try{localStorage.setItem('theme',next);}catch(e){}
+  });
+})();
+</script>
+</body>
+</html>
